@@ -19,8 +19,9 @@
     "outDir": "dist",
     "sourceMap": true,
 
+    // Runtime
     "lib": ["ES2022", "DOM"]
   },
-  "include": ["src"],
+  "include": ["src/**/*", "drizzle.config.ts"],
   "exclude": ["node_modules"]
 }

@@ -3,18 +3,18 @@ import morgan from "morgan";
 import cookieParser from "cookie-parser";
 import express, { Application } from "express";
 
-import { Route } from "./types";
+import { ENV, Route } from "./types";
 import { CORS_OPTIONS, NODE_ENV, PORT } from "./utils/constants";
 
 require("dotenv/config");
 
 export default class App {
   private app: Application;
-  private PORT: Number;
-  private ENV: string;
+  private PORT: number;
+  private ENV: ENV;
 
   constructor(routes: Route[]) {
-    this.PORT = +PORT!;
+    this.PORT = PORT;
     this.ENV = NODE_ENV;
     this.app = express();
     this.attachMiddlewares();

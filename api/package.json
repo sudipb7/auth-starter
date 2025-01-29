@@ -1,13 +1,16 @@
 {
   "name": "api",
   "version": "0.1.0",
-  "description": "",
+  "description": "api server of auth starter",
   "main": "dist/server.js",
   "scripts": {
     "start": "node dist/server.js",
     "dev": "nodemon",
-    "build": "tsc",
-    "format": "prettier --write ./src/**/*.ts"
+    "build": "rm -rf dist && tsc",
+    "format": "prettier --write ./src/**/*.{ts,json}",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio"
   },
   "keywords": [],
   "author": "",
@@ -18,16 +21,22 @@
     "@types/express": "^5.0.0",
     "@types/morgan": "^1.9.9",
     "@types/node": "^22.12.0",
+    "drizzle-kit": "^0.30.3",
     "nodemon": "^3.1.9",
     "prettier": "^3.4.2",
     "ts-node": "^10.9.2",
+    "tsx": "^4.19.2",
     "typescript": "^5.7.3"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^0.10.4",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
+    "drizzle-orm": "^0.39.0",
+    "drizzle-zod": "^0.7.0",
     "express": "^4.21.2",
-    "morgan": "^1.10.0"
+    "morgan": "^1.10.0",
+    "zod": "^3.24.1"
   }
 }

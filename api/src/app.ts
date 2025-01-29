@@ -1,9 +1,14 @@
+/// <reference path="./types/express.d.ts" />
+
 import cors from "cors";
 import morgan from "morgan";
+import requestIp from "request-ip";
 import cookieParser from "cookie-parser";
 import express, { Application } from "express";
 
 import { ENV, Route } from "./types";
+import { rateLimiter } from "./utils/rateLimiter";
+import { errorMiddleware } from "./middlewares/error";
 import { CORS_OPTIONS, NODE_ENV, PORT } from "./utils/constants";
 
 require("dotenv/config");
@@ -22,12 +27,15 @@ export default class App {
   }
 
   attachMiddlewares() {
+    this.app.use(requestIp.mw());
+    this.app.use(rateLimiter);
     this.app.use(express.static("public"));
     this.app.use(express.json());
     this.app.use(express.urlencoded({ extended: true }));
     this.app.use(cookieParser());
     this.app.use(cors(CORS_OPTIONS));
     this.app.use(morgan("dev"));
+    this.app.use(errorMiddleware);
   }
 
   attachRoutes(routes: Route[]) {

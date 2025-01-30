@@ -3,6 +3,7 @@ import { RequestHandler } from "express";
 import AuthService from "../services/auth.service";
 import UserService from "../services/user.service";
 import { OAuthProvider, OAuthProviders } from "../database/schema";
+import { HOSTNAME, NODE_ENV } from "../utils/constants";
 
 export default class AuthController {
   private authService = new AuthService();
@@ -32,7 +33,7 @@ export default class AuthController {
     const state = this.authService.setOAuthState(res);
     const url = this.authService.generateOauthAuthorizationUrl(provider, state);
 
-    res.status(307).redirect(url);
+    res.status(200).json({ url });
   };
 
   public signInWithOauthCallback: RequestHandler = async (req, res) => {
@@ -109,19 +110,21 @@ export default class AuthController {
       });
     }
 
-    const sesisonToken = this.authService.createSessionToken(user?.id!);
+    const sessionToken = this.authService.createSessionToken(user?.id!);
 
     await this.authService.createSession({
       mode: "create",
       userId: user?.id!,
-      token: sesisonToken,
+      token: sessionToken,
       ipAddress,
       userAgent,
     });
 
-    this.authService.setSessionCookie(res, sesisonToken);
+    this.authService.setSessionCookie(res, sessionToken);
 
-    res.status(307).redirect(process.env.CLIENT_URL!);
+    const redirectUrl = NODE_ENV === "development" ? "http://" : "https://" + HOSTNAME;
+
+    res.status(307).redirect(redirectUrl);
   };
 
   public signOut: RequestHandler = async (_, res) => {

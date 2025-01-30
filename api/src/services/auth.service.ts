@@ -82,8 +82,6 @@ export default class AuthService {
       throw new Error("Invalid Data");
     }
 
-    console.log("createSession -> Data", validated.data);
-
     const session = await db
       .insert(sessions)
       .values({ ...validated.data, expiresAt: new Date(Date.now() + this.SESSION_TOKEN_MAX_AGE) })
@@ -92,8 +90,6 @@ export default class AuthService {
     if (!session[0]) {
       throw new Error("Failed to create session");
     }
-
-    console.log("createSession -> Session", session[0]);
 
     return session[0];
   }
@@ -114,7 +110,6 @@ export default class AuthService {
         url.searchParams.append("scope", this.OAUTH_SCOPES["GITHUB"].join(" "));
         url.searchParams.append("redirect_uri", `${APP_URL}/v1/auth/callback/github`);
         url.searchParams.append("state", state);
-        console.log("generateOauthAuthorizationUrl -> github", url.toString());
         return url.toString();
       }
       case "google": {
@@ -127,7 +122,6 @@ export default class AuthService {
         url.searchParams.append("prompt", "consent");
         url.searchParams.append("redirect_uri", `${APP_URL}/v1/auth/callback/google`);
         url.searchParams.append("state", state);
-        console.log("generateOauthAuthorizationUrl -> google", url.toString());
         return url.toString();
       }
       default:
@@ -162,12 +156,10 @@ export default class AuthService {
           }
         );
 
-        console.log("getAccessToken -> github", data);
-
         return {
           access_token: data.access_token,
           scope: data.scope.split(" ").join(","),
-          type: data.type,
+          type: data.token_type.toLowerCase(),
         };
       }
       case "google": {
@@ -179,12 +171,10 @@ export default class AuthService {
           redirect_uri: `${APP_URL}/v1/auth/callback/google`,
         });
 
-        console.log("getAccessToken -> google", data);
-
         return {
           access_token: data.access_token,
           scope: data.scope.split(" ").join(","),
-          type: data.token_type,
+          type: data.token_type.toLowerCase(),
           expires_in: new Date(Date.now() + data.expires_in * 1000), // access token expires in 1 hour
           refresh_token: data.refresh_token,
         };
@@ -227,8 +217,6 @@ export default class AuthService {
 
         const primaryEmail = emails.find((email: Record<string, any>) => email.primary)?.email;
 
-        console.log("getOauthProfile -> github", profile, emails);
-
         return {
           providerId: profile.id.toString(),
           username: profile.login,
@@ -245,8 +233,6 @@ export default class AuthService {
           },
         });
 
-        console.log("getOauthProfile -> google", data);
-
         return {
           name: data.name,
           email: data.email,
@@ -261,7 +247,6 @@ export default class AuthService {
 
   public async getUserAccounts(userId: string) {
     const userAccounts = await db.select().from(accounts).where(eq(accounts.userId, userId));
-    console.log("getUserAccounts", userAccounts);
     return userAccounts;
   }
 
@@ -275,8 +260,6 @@ export default class AuthService {
       throw new Error("Invalid Data");
     }
 
-    console.log("createUserAccount -> Data", validated.data);
-
     const account = await db
       .insert(accounts)
       .values({ ...validated.data })
@@ -285,8 +268,6 @@ export default class AuthService {
     if (!account[0]) {
       throw new Error("Failed to create account");
     }
-
-    console.log("createUserAccount -> Account", account[0]);
 
     return account[0];
   }
@@ -301,8 +282,6 @@ export default class AuthService {
       throw new Error("Invalid Data");
     }
 
-    console.log("updateUserAccount -> Data", validated.data);
-
     const account = await db
       .update(accounts)
       .set({
@@ -313,8 +292,6 @@ export default class AuthService {
     if (!account[0]) {
       throw new Error("Failed to update account");
     }
-
-    console.log("updateUserAccount -> Account", account[0]);
 
     return account[0];
   }

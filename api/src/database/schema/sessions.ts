@@ -44,7 +44,6 @@ export const sessionsSchema = z.union([
     userId: baseSchema.shape.userId,
     ipAddress: baseSchema.shape.ipAddress,
     userAgent: baseSchema.shape.userAgent,
-    expiresAt: baseSchema.shape.expiresAt,
   }),
   z.object({
     mode: z.literal("update"),

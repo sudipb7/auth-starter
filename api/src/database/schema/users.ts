@@ -1,4 +1,4 @@
-import z from "zod";
+import { z } from "zod";
 import { createInsertSchema } from "drizzle-zod";
 import { InferSelectModel, relations } from "drizzle-orm";
 import { text, timestamp, pgTable } from "drizzle-orm/pg-core";
@@ -24,6 +24,7 @@ export const usersRelations = relations(users, ({ many }) => ({
 }));
 
 const baseSchema = createInsertSchema(users, {
+  id: val => val.min(1, { message: "ID is required" }),
   name: val =>
     val
       .min(3, { message: "Name must be at least 3 characters" })
@@ -53,6 +54,13 @@ export const userSchema = z.union([
     email: baseSchema.shape.email,
     emailVerified: z.date({ message: "Please provide a valid date" }),
     image: baseSchema.shape.image,
+  }),
+  z.object({
+    mode: z.literal("update"),
+    id: baseSchema.shape.id,
+    name: baseSchema.shape.name,
+    image: baseSchema.shape.image,
+    emailVerified: z.date({ message: "Please provide a valid date" }).optional(),
   }),
 ]);
 

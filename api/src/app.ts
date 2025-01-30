@@ -8,7 +8,7 @@ import express, { Application } from "express";
 
 import { ENV, Route } from "./types";
 import { rateLimiter } from "./utils/rateLimiter";
-import { errorMiddleware } from "./middlewares/error";
+import { errorMiddleware } from "./middlewares/error.middleware";
 import { CORS_OPTIONS, NODE_ENV, PORT } from "./utils/constants";
 
 require("dotenv/config");

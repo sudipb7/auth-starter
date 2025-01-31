@@ -8,7 +8,7 @@ import {
   GITHUB_CLIENT_SECRET,
   GOOGLE_CLIENT_ID,
   GOOGLE_CLIENT_SECRET,
-  HOSTNAME,
+  CLIENT_URL,
 } from "../utils/constants";
 import {
   accounts,
@@ -47,7 +47,10 @@ export default class AuthService {
     secure: process.env.NODE_ENV === "production",
     httpOnly: true,
     sameSite: "lax",
-    domain: process.env.NODE_ENV === "production" ? HOSTNAME : undefined, // `.${HOSTNAME}` for accessing across subdomains
+    domain:
+      process.env.NODE_ENV === "production"
+        ? "." + CLIENT_URL?.split(".").slice(1).join(".")
+        : undefined, // .domain.com for accessing across subdomains
   };
 
   public setOAuthState(res: Response) {

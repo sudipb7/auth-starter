@@ -27,7 +27,7 @@ export default function Home() {
           <div className="flex max-sm:flex-col items-center sm:justify-center gap-4">
             <Link
               href="/sign-in"
-              className="max-sm:w-full inline-flex items-center px-6 sm:px-8 py-3 max-sm:text-sm font-medium rounded-full text-background bg-gray-950 outline-none transition-all duration-200 ease-in-out justify-center shadow-sm hover:opacity-85"
+              className="max-sm:w-full inline-flex items-center px-6 sm:px-8 py-3 max-sm:text-sm font-medium rounded-full text-background bg-gray-950 outline-none transition-all duration-200 justify-center shadow-sm hover:opacity-85"
             >
               Get Started
               <ArrowRight className="ml-2 -mr-1 h-5 w-5" />
@@ -36,7 +36,7 @@ export default function Home() {
               href="https://github.com/sudipb7/auth-starter"
               target="_blank"
               rel="noopener noreferrer"
-              className="max-sm:w-full inline-flex items-center px-6 sm:px-8 py-3 max-sm:text-sm font-medium rounded-full outline-none bg-background border text-gray-900 hover:bg-background-secondary hover:border-gray-400 transition-all duration-200 ease-in-out justify-center shadow-sm"
+              className="max-sm:w-full inline-flex items-center px-6 sm:px-8 py-3 max-sm:text-sm font-medium rounded-full outline-none bg-background border text-gray-900 hover:bg-background-secondary hover:border-gray-400 transition-all duration-200 justify-center shadow-sm"
             >
               <Github className="mr-2 -ml-1 h-5 w-5" />
               View GitHub

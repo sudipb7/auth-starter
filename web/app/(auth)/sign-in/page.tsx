@@ -12,7 +12,7 @@ export default function SignInPage() {
   async function onSubmit(provider: "github" | "google") {
     try {
       setLoading(provider);
-      window.open(`${process.env.NEXT_PUBLIC_API_URL}/auth/sign-in/social/${provider}`);
+      window.open(`${process.env.NEXT_PUBLIC_API_URL}/auth/sign-in/social/${provider}`, "_self");
     } catch (error) {
       console.error(error);
       alert("An error occurred. Please try again.");

@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { Route } from "../types";
 import AuthController from "../controllers/auth.controller";
+import { sessionMiddleware } from "../middlewares/session.middleware";
 
 export default class AuthRouter implements Route {
   public path = "/auth";
@@ -13,11 +14,12 @@ export default class AuthRouter implements Route {
   }
 
   private initializeRoutes() {
-    this.router.route("/sign-up/email").post(this.controller.signUpWithEmail);
-    this.router.route("/sign-in/email").post(this.controller.signInWithEmail);
-    this.router.route("/sign-in/social/:provider").get(this.controller.signInWithOauth);
-    this.router.route("/callback/:provider").get(this.controller.signInWithOauthCallback);
-    this.router.route("sign-in/email/verify-email").post(this.controller.verifyEmail);
-    this.router.route("/sign-out").post(this.controller.signOut);
+    this.router.get("/session", this.controller.getSession);
+    this.router.post("/sign-up/email", this.controller.signUpWithEmail);
+    this.router.post("/sign-in/email", this.controller.signInWithEmail);
+    this.router.get("/sign-in/social/:provider", this.controller.signInWithOauth);
+    this.router.get("/callback/:provider", this.controller.signInWithOauthCallback);
+    this.router.post("sign-in/email/verify-email", this.controller.verifyEmail);
+    this.router.post("/sign-out", sessionMiddleware, this.controller.signOut);
   }
 }

@@ -28,6 +28,7 @@ export const sessionsRelations = relations(sessions, ({ one }) => ({
 }));
 
 const baseSchema = createInsertSchema(sessions, {
+  id: val => val.min(1, { message: "ID is required" }),
   token: val => val.min(1, { message: "Token is required" }),
   userId: val => val.min(1, { message: "User ID is required" }),
   ipAddress: val => val.optional(),

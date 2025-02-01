@@ -18,10 +18,11 @@ import {
   sessions,
   SessionSchema,
   sessionsSchema,
+  users,
 } from "../database/schema";
 import db from "../database";
 import { getZodError } from "../utils/zod";
-import { createToken } from "../utils/encryption";
+import { createToken, verifyToken } from "../utils/encryption";
 
 export default class AuthService {
   private SESSION_TOKEN_COOKIE = "session_token";
@@ -71,8 +72,82 @@ export default class AuthService {
     res.clearCookie(this.AUTH_STATE_COOKIE, this.COOKIE_OPTIONS);
   }
 
+  public getSessionToken(req: Request): string {
+    return (
+      req.cookies[this.SESSION_TOKEN_COOKIE] || req.headers["authorization"]?.split(" ")[1] || ""
+    );
+  }
+
   public createSessionToken(userId: string) {
     return createToken({ userId });
+  }
+
+  public setSessionCookie(res: Response, token: string) {
+    res.cookie(this.SESSION_TOKEN_COOKIE, token, {
+      ...this.COOKIE_OPTIONS,
+      maxAge: this.SESSION_TOKEN_MAX_AGE,
+    });
+  }
+
+  public deleteSessionCookie(res: Response) {
+    res.clearCookie(this.SESSION_TOKEN_COOKIE, this.COOKIE_OPTIONS);
+  }
+
+  public async getCurrentSession(req: Request) {
+    const token = this.getSessionToken(req);
+    if (!token) {
+      return { session: null, user: null };
+    }
+
+    return this.validateSession(token);
+  }
+
+  public async validateSession(token: string) {
+    const decoded = verifyToken(token);
+    if (!decoded) {
+      return { session: null, user: null };
+    }
+
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, decoded.userId),
+      with: { sessions: true },
+    });
+    if (!user) {
+      return { session: null, user: null };
+    }
+
+    const userSessions = user.sessions;
+    if (userSessions.length === 0) {
+      return { session: null, user: null };
+    }
+
+    const session = userSessions.find(s => s.token === token);
+    if (!session) {
+      return { session: null, user: null };
+    }
+
+    if (session.expiresAt < new Date()) {
+      await db.delete(sessions).where(eq(sessions.id, session.id));
+      return { session: null, user: null };
+    }
+
+    if (session.expiresAt < new Date(Date.now() + this.SESSION_TOKEN_MAX_AGE / 2)) {
+      await this.updateSession({
+        mode: "update",
+        id: session.id,
+        expiresAt: new Date(Date.now() + this.SESSION_TOKEN_MAX_AGE),
+      });
+    }
+
+    return {
+      session,
+      user: {
+        id: user.id,
+        name: user.name,
+        image: user.image,
+        email: user.email,
+      },
+    };
   }
 
   public async createSession(data: SessionSchema) {
@@ -97,11 +172,91 @@ export default class AuthService {
     return session[0];
   }
 
-  public setSessionCookie(res: Response, token: string) {
-    res.cookie(this.SESSION_TOKEN_COOKIE, token, {
-      ...this.COOKIE_OPTIONS,
-      maxAge: this.SESSION_TOKEN_MAX_AGE,
-    });
+  public async updateSession(data: SessionSchema) {
+    const validated = sessionsSchema.safeParse(data);
+    if (!validated.success) {
+      throw new Error(getZodError(validated.error));
+    }
+
+    if (validated.data.mode !== "update") {
+      throw new Error("Invalid Data");
+    }
+
+    const session = await db
+      .update(sessions)
+      .set({ expiresAt: validated.data.expiresAt, updatedAt: new Date() })
+      .where(eq(sessions.id, validated.data.id))
+      .returning();
+
+    if (!session[0]) {
+      throw new Error("Failed to update session");
+    }
+
+    return session[0];
+  }
+
+  public async deleteSession(data: SessionSchema) {
+    const validated = sessionsSchema.safeParse(data);
+    if (!validated.success) {
+      throw new Error(getZodError(validated.error));
+    }
+
+    if (validated.data.mode !== "delete") {
+      throw new Error("Invalid Data");
+    }
+
+    await db.delete(sessions).where(eq(sessions.id, validated.data.id));
+  }
+
+  public async getUserAccounts(userId: string) {
+    const userAccounts = await db.select().from(accounts).where(eq(accounts.userId, userId));
+    return userAccounts;
+  }
+
+  public async createUserAccount(data: AccountSchema) {
+    const validated = accountsSchema.safeParse(data);
+    if (!validated.success) {
+      throw new Error(getZodError(validated.error));
+    }
+
+    if (validated.data.mode === "update" || validated.data.mode === "changePassword") {
+      throw new Error("Invalid Data");
+    }
+
+    const account = await db
+      .insert(accounts)
+      .values({ ...validated.data })
+      .returning();
+
+    if (!account[0]) {
+      throw new Error("Failed to create account");
+    }
+
+    return account[0];
+  }
+
+  public async updateUserAccount(data: AccountSchema) {
+    const validated = accountsSchema.safeParse(data);
+    if (!validated.success) {
+      throw new Error(getZodError(validated.error));
+    }
+
+    if (validated.data.mode !== "update") {
+      throw new Error("Invalid Data");
+    }
+
+    const account = await db
+      .update(accounts)
+      .set({
+        ...validated.data,
+      })
+      .returning();
+
+    if (!account[0]) {
+      throw new Error("Failed to update account");
+    }
+
+    return account[0];
   }
 
   public generateOauthAuthorizationUrl(provider: OAuthProvider, state: string) {
@@ -246,56 +401,5 @@ export default class AuthService {
       default:
         throw new Error("Invalid OAuth provider");
     }
-  }
-
-  public async getUserAccounts(userId: string) {
-    const userAccounts = await db.select().from(accounts).where(eq(accounts.userId, userId));
-    return userAccounts;
-  }
-
-  public async createUserAccount(data: AccountSchema) {
-    const validated = accountsSchema.safeParse(data);
-    if (!validated.success) {
-      throw new Error(getZodError(validated.error));
-    }
-
-    if (validated.data.mode === "update" || validated.data.mode === "changePassword") {
-      throw new Error("Invalid Data");
-    }
-
-    const account = await db
-      .insert(accounts)
-      .values({ ...validated.data })
-      .returning();
-
-    if (!account[0]) {
-      throw new Error("Failed to create account");
-    }
-
-    return account[0];
-  }
-
-  public async updateUserAccount(data: AccountSchema) {
-    const validated = accountsSchema.safeParse(data);
-    if (!validated.success) {
-      throw new Error(getZodError(validated.error));
-    }
-
-    if (validated.data.mode !== "update") {
-      throw new Error("Invalid Data");
-    }
-
-    const account = await db
-      .update(accounts)
-      .set({
-        ...validated.data,
-      })
-      .returning();
-
-    if (!account[0]) {
-      throw new Error("Failed to update account");
-    }
-
-    return account[0];
   }
 }

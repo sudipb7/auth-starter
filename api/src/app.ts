@@ -27,6 +27,7 @@ export default class App {
   }
 
   attachMiddlewares() {
+    this.app.set("trust proxy", true);
     this.app.use(requestIp.mw());
     this.app.use(rateLimiter);
     this.app.use(express.static("public"));

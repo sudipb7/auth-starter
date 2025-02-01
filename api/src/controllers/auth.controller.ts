@@ -28,7 +28,11 @@ export default class AuthController {
       return;
     }
 
-    // TODO: Check is user is already logged in
+    const session = await this.authService.getCurrentSession(req as any);
+    if (session.user && session.session) {
+      res.status(307).redirect(CLIENT_URL!);
+      return;
+    }
 
     const state = this.authService.setOAuthState(res);
     const url = this.authService.generateOauthAuthorizationUrl(provider, state);
@@ -125,7 +129,26 @@ export default class AuthController {
     res.status(307).redirect(CLIENT_URL!);
   };
 
-  public signOut: RequestHandler = async (_, res) => {
-    res.status(200).json({ message: "Hello World!" });
+  public getSession: RequestHandler = async (req, res) => {
+    const session = await this.authService.getCurrentSession(req as any);
+
+    if (!session.user || !session.session) {
+      this.authService.deleteSessionCookie(res);
+      res.status(200).json({ session: null, user: null });
+      return;
+    }
+
+    this.authService.setSessionCookie(res, session.session.token);
+
+    res.status(200).json(session);
+  };
+
+  public signOut: RequestHandler = async (req, res) => {
+    const session = (req as any).session;
+
+    await this.authService.deleteSession({ mode: "delete", id: session.session.id });
+    this.authService.deleteSessionCookie(res);
+
+    res.status(200).json({ message: "Signed out" });
   };
 }

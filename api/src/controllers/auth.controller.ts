@@ -4,6 +4,7 @@ import AuthService from "../services/auth.service";
 import UserService from "../services/user.service";
 import { CLIENT_URL } from "../utils/constants";
 import { OAuthProvider, OAuthProviders } from "../database/schema";
+import { getUserIp } from "../utils/ip";
 
 export default class AuthController {
   private authService = new AuthService();
@@ -44,7 +45,7 @@ export default class AuthController {
     const code = req.query.code as string;
     const state = req.query.state as string;
     const provider = req.params.provider as OAuthProvider;
-    const ipAddress = req.clientIp;
+    const ipAddress = getUserIp(req as any);
     const userAgent = req.headers["user-agent"];
 
     if ([state, code, provider].some(val => !val)) {
